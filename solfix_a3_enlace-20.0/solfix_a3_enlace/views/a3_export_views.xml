@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_a3_export_list" model="ir.ui.view">
+        <field name="name">a3.export.list</field>
+        <field name="model">a3.export</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+                <field name="date_from"/>
+                <field name="date_to"/>
+                <field name="move_count"/>
+                <field name="record_count"/>
+                <field name="state" widget="badge" decoration-success="state == 'done'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_a3_export_form" model="ir.ui.view">
+        <field name="name">a3.export.form</field>
+        <field name="model">a3.export</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_generate" type="object" string="Generar SUENLACE.DAT"
+                            class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_download" type="object" string="Descargar fichero"
+                            class="btn-primary" invisible="state != 'done'"/>
+                    <button name="action_reset" type="object" string="Revertir exportación"
+                            invisible="state != 'done'"
+                            confirm="Las facturas volverán a quedar pendientes de exportar. Úsalo solo si el fichero NO se importó en A3. ¿Continuar?"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_moves" type="object" class="oe_stat_button"
+                                icon="receipt_long" invisible="move_count == 0">
+                            <field name="move_count" widget="statinfo" string="Facturas"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="company_id" groups="base.group_multi_company" readonly="state != 'draft'"/>
+                            <field name="date_from" readonly="state != 'draft'"/>
+                            <field name="date_to" readonly="state != 'draft'"/>
+                        </group>
+                        <group>
+                            <field name="file_data" filename="file_name" invisible="state != 'done'"/>
+                            <field name="file_name" invisible="1"/>
+                            <field name="record_count" invisible="state != 'done'"/>
+                            <field name="written_path" invisible="not written_path"/>
+                        </group>
+                    </group>
+                    <field name="warnings" invisible="not warnings" class="text-warning"/>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_a3_export" model="ir.actions.act_window">
+        <field name="name">Exportaciones A3</field>
+        <field name="res_model">a3.export</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Crea una exportación para generar el SUENLACE.DAT</p>
+            <p>Incluye las facturas de venta y compra validadas que aún no se han enviado a A3.</p>
+        </field>
+    </record>
+
+    <menuitem id="menu_a3_export"
+              name="Exportación A3"
+              parent="account.menu_finance_entries"
+              action="action_a3_export"
+              groups="account.group_account_manager"
+              sequence="90"/>
+</odoo>

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_account_form_a3" model="ir.ui.view">
+        <field name="name">account.account.form.a3</field>
+        <field name="model">account.account</field>
+        <field name="inherit_id" ref="account.view_account_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='code'][1]" position="after">
+                <field name="a3_code" groups="account.group_account_manager"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_account_position_form_a3" model="ir.ui.view">
+        <field name="name">account.fiscal.position.form.a3</field>
+        <field name="model">account.fiscal.position</field>
+        <field name="inherit_id" ref="account.view_account_position_form"/>
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field name="a3_subtype_sale"/>
+                <field name="a3_subtype_purchase"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_move_form_a3" model="ir.ui.view">
+        <field name="name">account.move.form.a3</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_move_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='other_info']//group" position="inside">
+                <field name="a3_export_id" invisible="not a3_export_id"
+                       groups="account.group_account_readonly"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_account_invoice_filter_a3" model="ir.ui.view">
+        <field name="name">account.move.search.a3</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_account_invoice_filter"/>
+        <field name="arch" type="xml">
+            <xpath expr="//search" position="inside">
+                <separator/>
+                <filter name="a3_pending" string="Pendientes de A3"
+                        domain="[('a3_exported', '=', False), ('state', '=', 'posted')]"/>
+                <filter name="a3_done" string="Exportadas a A3"
+                        domain="[('a3_exported', '=', True)]"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

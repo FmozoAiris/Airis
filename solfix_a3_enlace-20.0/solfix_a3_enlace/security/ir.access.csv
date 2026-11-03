@@ -1,0 +1,4 @@
+id,name,model_id,group_id/id,operation,domain
+access_a3_export_manager,a3.export manager,a3.export,account.group_account_manager,crud,
+access_a3_export_readonly,a3.export readonly,a3.export,account.group_account_readonly,r,
+a3_export_company_rule,a3.export multi-company,a3.export,,crud,"[('company_id', 'in', company_ids)]"

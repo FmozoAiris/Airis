@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="seq_a3_export" model="ir.sequence">
+        <field name="name">Exportación A3</field>
+        <field name="code">a3.export</field>
+        <field name="prefix">A3/%(year)s/</field>
+        <field name="padding">4</field>
+        <field name="company_id" eval="False"/>
+    </record>
+</odoo>

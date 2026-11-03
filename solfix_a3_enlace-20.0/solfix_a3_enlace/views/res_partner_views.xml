@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_partner_property_form_a3" model="ir.ui.view">
+        <field name="name">res.partner.form.a3</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="account.view_partner_property_form"/>
+        <field name="arch" type="xml">
+            <field name="property_account_payable_id" position="after">
+                <field name="a3_customer_account" groups="account.group_account_manager"/>
+                <field name="a3_supplier_account" groups="account.group_account_manager"/>
+            </field>
+        </field>
+    </record>
+</odoo>

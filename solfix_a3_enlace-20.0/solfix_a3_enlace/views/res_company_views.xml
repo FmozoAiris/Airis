@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_company_form_a3" model="ir.ui.view">
+        <field name="name">res.company.form.a3</field>
+        <field name="model">res.company</field>
+        <field name="inherit_id" ref="base.view_company_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Enlace A3" name="a3" groups="account.group_account_manager">
+                    <group>
+                        <group string="Empresa en A3">
+                            <field name="a3_company_code" placeholder="00016"/>
+                            <field name="a3_account_length"/>
+                            <field name="a3_customer_prefix"/>
+                            <field name="a3_supplier_prefix"/>
+                        </group>
+                        <group string="Exportación">
+                            <field name="a3_journal_ids" widget="many2many_tags"/>
+                            <field name="a3_export_path" placeholder="/mnt/a3/enlace"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>
