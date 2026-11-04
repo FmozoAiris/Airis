@@ -6,7 +6,6 @@ FILE_ENCODING = "cp1252"
 
 
 class A3Record:
-    """A single 256-byte record filled with spaces."""
 
     def __init__(self, company_code, date, record_type):
         self._chars = [" "] * RECORD_DATA_LENGTH

@@ -149,7 +149,6 @@ class A3Export(models.Model):
         return target
 
     def action_reset(self):
-        """Release the invoices so they can be exported again."""
         for export in self:
             export.move_ids.write({"a3_export_id": False})
             export.write(
@@ -186,7 +185,6 @@ class A3Export(models.Model):
 
     @api.model
     def _cron_generate(self):
-        """Daily export for every company with an A3 company code."""
         companies = self.env["res.company"].search([("a3_company_code", "!=", False)])
         for company in companies:
             export = self.create({"company_id": company.id, "date_from": False})

@@ -6,7 +6,6 @@ from odoo.addons.account.tests.common import AccountTestInvoicingCommon
 
 
 def field(line, start, length):
-    """1-based fixed width slice."""
     return line[start - 1 : start - 1 + length]
 
 
@@ -81,7 +80,6 @@ class TestA3Export(AccountTestInvoicingCommon):
         self.assertEqual(field(header, 16, 12).strip(), "43000099")
         self.assertEqual(field(header, 58, 1), "1")
         self.assertEqual(field(header, 69, 1), "I")
-        # 1000 + 210 + 500 + 50
         self.assertEqual(field(header, 100, 14), "+0000001760.00")
         self.assertEqual(field(header, 176, 14).strip(), "A12345674")
         self.assertEqual(field(header, 230, 5), "28001")
@@ -111,9 +109,7 @@ class TestA3Export(AccountTestInvoicingCommon):
         header, detail = records
         self.assertEqual(field(header, 58, 1), "2")
         self.assertTrue(field(header, 16, 12).strip().startswith("400"))
-        # 11 caracteres: se acorta a 10 para A3 (prefijo + año + secuencia)
         self.assertEqual(field(header, 59, 10).strip(), "F260000077")
-        # 1000 + 210 - 150
         self.assertEqual(field(header, 100, 14), "+0000001060.00")
         self.assertEqual(field(detail, 58, 1), "C")
         self.assertEqual(field(detail, 116, 5), "21.00")
