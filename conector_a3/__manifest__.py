@@ -1,12 +1,13 @@
 {
     "name": "Enlace contable a3ASESOR (SUENLACE.DAT)",
-    "summary": "Exporta facturas de venta y compra de Odoo al fichero "
-    "SUENLACE.DAT del enlace contable de a3ASESOR | con",
-    "version": "20.0.1.0.0",
+    "summary": "Exporta facturas de Odoo a a3ASESOR | con: Excel de facturas "
+    "expedidas o fichero SUENLACE.DAT del enlace contable",
+    "version": "20.0.1.2.0",
     "category": "Accounting/Accounting",
-    "author": "Solfix",
+    "author": "Solfix FM",
     "license": "LGPL-3",
     "depends": ["account", "l10n_es"],
+    "external_dependencies": {"python": ["openpyxl"]},
     "data": [
         "security/ir.access.csv",
         "data/ir_sequence.xml",

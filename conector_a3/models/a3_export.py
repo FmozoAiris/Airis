@@ -1,3 +1,4 @@
+import io
 import logging
 import os
 
@@ -10,6 +11,7 @@ from .a3_format import FILE_ENCODING
 _logger = logging.getLogger(__name__)
 
 FILE_NAME = "SUENLACE.DAT"
+XLSX_MIMETYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
 
 class A3Export(models.Model):
@@ -55,12 +57,13 @@ class A3Export(models.Model):
                 vals["name"] = self.env["ir.sequence"].next_by_code("a3.export") or "/"
         return super().create(vals_list)
 
+    # ------------------------------------------------------------------
     def _get_moves_domain(self):
         self.ensure_one()
         domain = [
             ("company_id", "=", self.company_id.id),
             ("state", "=", "posted"),
-            ("move_type", "in", ("out_invoice", "out_refund", "in_invoice", "in_refund")),
+            ("move_type", "in", self._get_move_types()),
             ("a3_export_id", "=", False),
         ]
         if self.date_from:
@@ -70,6 +73,12 @@ class A3Export(models.Model):
         if self.company_id.a3_journal_ids:
             domain.append(("journal_id", "in", self.company_id.a3_journal_ids.ids))
         return domain
+
+    def _get_move_types(self):
+        if self.company_id.a3_export_format == "xlsx":
+            # The A3 Excel layout is for "facturas expedidas" only
+            return ("out_invoice", "out_refund")
+        return ("out_invoice", "out_refund", "in_invoice", "in_refund")
 
     def action_generate(self):
         for export in self:
@@ -81,7 +90,8 @@ class A3Export(models.Model):
         if self.state != "draft":
             raise UserError(self.env._("Esta exportación ya fue generada."))
         company = self.company_id
-        if not company.a3_company_code:
+        fmt = company.a3_export_format or "xlsx"
+        if fmt == "dat" and not company.a3_company_code:
             raise UserError(
                 self.env._(
                     "Configura el 'Código de empresa A3' en la empresa %s.", company.name
@@ -95,7 +105,7 @@ class A3Export(models.Model):
 
         lines, warnings, exported = [], [], self.env["account.move"]
         for move in moves:
-            move_lines, move_warnings = move._a3_records()
+            move_lines, move_warnings = move._a3_xlsx_rows() if fmt == "xlsx" else move._a3_records()
             warnings += move_warnings
             if move_lines:
                 lines += move_lines
@@ -103,14 +113,19 @@ class A3Export(models.Model):
         if not lines:
             raise UserError("\n".join(warnings) or self.env._("Nada que exportar."))
 
-        content = "".join(lines).encode(FILE_ENCODING, errors="replace")
-        written_path = self._write_to_folder(content, warnings)
+        if fmt == "xlsx":
+            content = self._build_xlsx(lines)
+            file_name = "A3_FACTURAS_%s.xlsx" % self.name.replace("/", "_")
+        else:
+            content = "".join(lines).encode(FILE_ENCODING, errors="replace")
+            file_name = FILE_NAME
+        written_path = self._write_to_folder(content, warnings, file_name)
         exported.write({"a3_export_id": self.id})
         self.write(
             {
                 "state": "done",
-                "file_data": BinaryBytes(content, filename=FILE_NAME),
-                "file_name": FILE_NAME,
+                "file_data": BinaryBytes(content, filename=file_name),
+                "file_name": file_name,
                 "record_count": len(lines),
                 "written_path": written_path,
                 "warnings": "\n".join(warnings) or False,
@@ -119,18 +134,34 @@ class A3Export(models.Model):
         self.message_post(
             body=self.env._(
                 "Generado %(file)s con %(moves)s facturas y %(records)s registros.",
-                file=FILE_NAME, moves=len(exported), records=len(lines),
+                file=file_name, moves=len(exported), records=len(lines),
             )
         )
 
-    def _write_to_folder(self, content, warnings):
+    @staticmethod
+    def _build_xlsx(rows):
+        """Sheet without header row, like the file A3 already imports."""
+        import openpyxl
+
+        workbook = openpyxl.Workbook()
+        sheet = workbook.active
+        sheet.title = "Hoja1"
+        for row in rows:
+            sheet.append(row)
+        for cell in sheet["A"]:
+            cell.number_format = "DD/MM/YYYY"
+        stream = io.BytesIO()
+        workbook.save(stream)
+        return stream.getvalue()
+
+    def _write_to_folder(self, content, warnings, file_name=FILE_NAME):
         path = (self.company_id.a3_export_path or "").strip()
         if not path:
             return False
         if not os.path.isdir(path):
             warnings.append(self.env._("La carpeta %s no existe: el fichero solo se adjuntó.", path))
             return False
-        target = os.path.join(path, FILE_NAME)
+        target = os.path.join(path, file_name)
         if os.path.exists(target):
             warnings.append(
                 self.env._(
@@ -149,6 +180,7 @@ class A3Export(models.Model):
         return target
 
     def action_reset(self):
+        """Release the invoices so they can be exported again."""
         for export in self:
             export.move_ids.write({"a3_export_id": False})
             export.write(
@@ -185,7 +217,10 @@ class A3Export(models.Model):
 
     @api.model
     def _cron_generate(self):
-        companies = self.env["res.company"].search([("a3_company_code", "!=", False)])
+        """Daily export for every company with an A3 company code."""
+        companies = self.env["res.company"].search(
+            ["|", ("a3_export_format", "=", "xlsx"), ("a3_company_code", "!=", False)]
+        )
         for company in companies:
             export = self.create({"company_id": company.id, "date_from": False})
             try:
