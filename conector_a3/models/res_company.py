@@ -1,10 +1,5 @@
-import os
-import time
-
 from odoo import api, fields, models
-from odoo.exceptions import UserError, ValidationError
-
-TEST_PREFIX = "odoo_prueba_conexion_"
+from odoo.exceptions import ValidationError
 
 
 class ResCompany(models.Model):
@@ -36,18 +31,6 @@ class ResCompany(models.Model):
         domain="[('type', 'in', ('sale', 'purchase')), ('company_id', '=', id)]",
         help="Vacío = todos los diarios de ventas y compras.",
     )
-    a3_export_format = fields.Selection(
-        [
-            ("xlsx", "Excel (importación de facturas expedidas)"),
-            ("dat", "SUENLACE.DAT (enlace contable)"),
-        ],
-        string="Formato del fichero",
-        default="xlsx",
-        required=True,
-        help="Excel: hoja con una fila por factura, familia y tipo de IVA, para la "
-        "importación de facturas expedidas de A3 (misma plantilla que se usaba con Aqua). "
-        "SUENLACE.DAT: fichero del enlace contable (ventas y compras).",
-    )
     a3_export_path = fields.Char(
         string="Carpeta de destino del enlace",
         help="Ruta en el servidor de Odoo donde se dejará SUENLACE.DAT "
@@ -71,86 +54,3 @@ class ResCompany(models.Model):
                 raise ValidationError(
                     self.env._("Los dígitos de subcuenta A3 deben estar entre 6 y 12.")
                 )
-
-    @staticmethod
-    def _a3_find_mount(path):
-        """Return (mount_point, fstype, source) of the mount holding ``path``."""
-        best = ("/", "", "")
-        try:
-            with open("/proc/mounts", encoding="utf-8") as handle:
-                for line in handle:
-                    parts = line.split()
-                    if len(parts) < 3:
-                        continue
-                    source, mount_point, fstype = parts[0], parts[1], parts[2]
-                    mount_point = mount_point.replace("\\040", " ")
-                    if (path == mount_point or path.startswith(mount_point.rstrip("/") + "/")) and len(
-                        mount_point
-                    ) >= len(best[0]):
-                        best = (mount_point, fstype, source)
-        except OSError:
-            pass
-        return best
-
-    def action_a3_test_path(self):
-        self.ensure_one()
-        _ = self.env._
-        path = (self.a3_export_path or "").strip()
-        if not path:
-            raise UserError(_("Indica primero la carpeta de destino del enlace."))
-        if not os.path.isdir(path):
-            raise UserError(
-                _(
-                    "La carpeta %s no existe dentro del servidor de Odoo. "
-                    "Revisa que el volumen del share de A3 esté montado en esa ruta.",
-                    path,
-                )
-            )
-        mount_point, fstype, source = self._a3_find_mount(os.path.realpath(path))
-        target = os.path.join(path, "%s%s.txt" % (TEST_PREFIX, int(time.time())))
-        payload = ("Prueba de escritura desde Odoo (%s)\r\n" % self.name).encode("cp1252", "replace")
-        try:
-            with open(target, "wb") as handle:
-                handle.write(payload)
-            with open(target, "rb") as handle:
-                read_back = handle.read()
-            os.remove(target)
-        except OSError as error:
-            raise UserError(
-                _(
-                    "No se pudo escribir en %(path)s: %(error)s. "
-                    "Revisa el rol de la identidad sobre el share y que el volumen no esté en solo lectura.",
-                    path=path, error=error,
-                )
-            ) from error
-        if read_back != payload:
-            raise UserError(_("El fichero de prueba se leyó distinto de como se escribió en %s.", path))
-
-        lines = [
-            _("Escritura, lectura y borrado correctos en %s.", path),
-            _("Montaje: %(mount)s (tipo %(fstype)s, origen %(origin)s).",
-              mount=mount_point, fstype=fstype or "?", origin=source or "?"),
-        ]
-        notif_type = "success"
-        if fstype not in ("cifs", "smb3", "smbfs", "nfs", "nfs4"):
-            notif_type = "warning"
-            lines.append(
-                _(
-                    "Atención: la carpeta no está en un volumen de red (tipo %s). "
-                    "Lo que se escriba aquí no llegará al share de A3 y se perderá al reiniciar el contenedor.",
-                    fstype or "?",
-                )
-            )
-        pending = os.path.join(path, "SUENLACE.DAT")
-        if os.path.exists(pending):
-            lines.append(_("Hay un SUENLACE.DAT pendiente de importar en A3."))
-        return {
-            "type": "ir.actions.client",
-            "tag": "display_notification",
-            "params": {
-                "title": _("Carpeta de enlace A3"),
-                "message": "\n".join(lines),
-                "type": notif_type,
-                "sticky": True,
-            },
-        }

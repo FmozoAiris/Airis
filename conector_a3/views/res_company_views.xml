@@ -15,12 +15,8 @@
                             <field name="a3_supplier_prefix"/>
                         </group>
                         <group string="Exportación">
-                            <field name="a3_export_format"/>
                             <field name="a3_journal_ids" widget="many2many_tags"/>
-                            <field name="a3_export_path" placeholder="/mnt/a3/intercambio"/>
-                            <button name="action_a3_test_path" type="object" colspan="2"
-                                    string="Probar carpeta" icon="fa-plug" class="btn-secondary"
-                                    invisible="not a3_export_path"/>
+                            <field name="a3_export_path" placeholder="/mnt/a3/enlace"/>
                         </group>
                     </group>
                 </page>

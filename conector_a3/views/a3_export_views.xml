@@ -22,7 +22,7 @@
         <field name="arch" type="xml">
             <form>
                 <header>
-                    <button name="action_generate" type="object" string="Generar fichero"
+                    <button name="action_generate" type="object" string="Generar SUENLACE.DAT"
                             class="btn-primary" invisible="state != 'draft'"/>
                     <button name="action_download" type="object" string="Descargar fichero"
                             class="btn-primary" invisible="state != 'done'"/>
@@ -73,8 +73,8 @@
 
     <menuitem id="menu_a3_export"
               name="Exportación A3"
-              parent="account.menu_finance"
+              parent="account.menu_finance_entries"
               action="action_a3_export"
               groups="account.group_account_manager"
-              sequence="5"/>
+              sequence="90"/>
 </odoo>
