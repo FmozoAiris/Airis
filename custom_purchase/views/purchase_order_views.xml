@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="purchase_order_form_factory" model="ir.ui.view">
+        <field name="name">purchase.order.form.factory</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//group//field[@name='partner_ref']" position="attributes">
+                <attribute name="string">Nº proforma / Ref. proveedor</attribute>
+            </xpath>
+            <xpath expr="//group//field[@name='partner_ref']" position="after">
+                <field name="factory_status" widget="badge"
+                       decoration-info="factory_status in ('requested', 'production')"
+                       decoration-warning="factory_status in ('transit', 'partial')"
+                       decoration-success="factory_status == 'received'"/>
+                <field name="proforma_date"/>
+                <field name="production_date"/>
+                <field name="departure_date" invisible="state in ('draft', 'sent', 'to approve', 'cancel')"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="purchase_order_list_factory" model="ir.ui.view">
+        <field name="name">purchase.order.list.factory</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_view_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='partner_ref']" position="after">
+                <field name="factory_status" widget="badge" optional="show"
+                       decoration-info="factory_status in ('requested', 'production')"
+                       decoration-warning="factory_status in ('transit', 'partial')"
+                       decoration-success="factory_status == 'received'"/>
+                <field name="departure_date" optional="show"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="purchase_order_kanban_factory" model="ir.ui.view">
+        <field name="name">purchase.order.kanban.factory</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.view_purchase_order_kanban"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='partner_id']" position="after">
+                <field name="factory_status" widget="badge" class="ms-1"
+                       decoration-info="factory_status in ('requested', 'production')"
+                       decoration-warning="factory_status in ('transit', 'partial')"
+                       decoration-success="factory_status == 'received'"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="purchase_order_search_factory" model="ir.ui.view">
+        <field name="name">purchase.order.search.factory</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.view_purchase_order_filter"/>
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='draft_rfqs']" position="before">
+                <filter name="factory_open" string="Pendientes de recibir"
+                        domain="[('factory_status', 'in', ('requested', 'production', 'transit', 'partial'))]"/>
+                <filter name="factory_transit" string="En tránsito"
+                        domain="[('factory_status', '=', 'transit')]"/>
+                <separator/>
+            </xpath>
+            <xpath expr="//search" position="inside">
+                <filter name="group_factory_status" string="Situación"
+                        context="{'group_by': 'factory_status'}"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_purchase_factory_tracking" model="ir.actions.act_window">
+        <field name="name">Seguimiento de fábrica</field>
+        <field name="res_model">purchase.order</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="domain">[('factory_status', '!=', 'cancel')]</field>
+        <field name="context">{'group_by': 'factory_status'}</field>
+    </record>
+
+    <menuitem id="menu_purchase_factory_tracking" name="Seguimiento de fábrica"
+              parent="purchase.menu_procurement_management"
+              action="action_purchase_factory_tracking" sequence="7"/>
+</odoo>
