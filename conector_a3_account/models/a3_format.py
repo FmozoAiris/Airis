@@ -6,16 +6,15 @@ FILE_ENCODING = "cp1252"
 
 
 class A3Record:
-    """A single 256-byte record filled with spaces."""
 
     def __init__(self, company_code, date, record_type):
         self._chars = [" "] * RECORD_DATA_LENGTH
-        self.set(1, 1, "4")
+        self.set(1, 1, "4")  # formato
         self.set(2, 5, str(company_code or "").strip().zfill(5)[-5:])
         self.set(7, 8, fmt_date(date))
         self.set(15, 1, record_type)
-        self.set(253, 1, "E")  
-        self.set(254, 1, "N")  
+        self.set(253, 1, "E")  # moneda del enlace: euros
+        self.set(254, 1, "N")  # indicador de generado
 
     def set(self, position, length, value):
         value = fmt_text(value, length)
@@ -31,6 +30,7 @@ class A3Record:
 def _sanitize(value):
     value = "" if value is None or value is False else str(value)
     value = value.replace("\r", " ").replace("\n", " ").replace("\t", " ")
+    # Keep only characters representable in the A3 file encoding
     return value.encode(FILE_ENCODING, errors="replace").decode(FILE_ENCODING)
 
 

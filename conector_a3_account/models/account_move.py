@@ -80,13 +80,14 @@ class AccountMove(models.Model):
             accounts.setdefault(tax, line.account_id)
         return amounts, accounts
 
-    def _a3_detail_groups(self):
+    def _a3_detail_groups(self, by_category=False):
         self.ensure_one()
         company = self.company_id
         groups = {}
         for line in self.invoice_line_ids.filtered(lambda l: l.display_type == "product"):
             vat, rec, ret = self._a3_classify_taxes(line.tax_ids)
-            key = (line.account_id, vat, rec, ret)
+            categ = line.product_id.categ_id if by_category else self.env["product.category"]
+            key = (line.account_id, vat, rec, ret, categ)
             group = groups.setdefault(
                 key,
                 {
@@ -99,6 +100,7 @@ class AccountMove(models.Model):
                     "rec_amount": 0.0,
                     "ret_amount": 0.0,
                     "label": line.name or line.product_id.display_name or "",
+                    "categ": categ,
                 },
             )
             group["base"] += abs(line.balance)
@@ -208,3 +210,85 @@ class AccountMove(models.Model):
             detail.set(216, 12, group["ret_account"])
             lines.append(detail.render())
         return lines, warnings
+
+    def _a3_xlsx_rows(self):
+        self.ensure_one()
+        company = self.company_id
+        warnings = []
+        is_refund = self.move_type == "out_refund"
+        sign = -1 if is_refund else 1
+        partner = self.commercial_partner_id
+        groups = self._a3_detail_groups(by_category=True)
+        if not groups:
+            return [], [self.env._("%s: sin líneas de producto, no se exporta.", self.name)]
+
+        base_total = sum(g["base"] for g in groups)
+        vat_total = sum(g["vat_amount"] for g in groups)
+        total = abs(self.amount_total_signed)
+        tier_bases = {4: 0.0, 10: 0.0, 21: 0.0}
+        for group in groups:
+            rate = round(group["vat"].amount) if group["vat"] else 0
+            if rate in tier_bases:
+                tier_bases[rate] += group["base"]
+
+        country = partner.country_id or company.country_id
+        if country.code == "ES":
+            country_name = "ESPAÑA"
+        else:
+            lang = "es_ES" if self.env["res.lang"]._lang_get("es_ES") else self.env.lang
+            country_name = (country.with_context(lang=lang).name or "").upper()
+        europe = self.env.ref("base.europe", raise_if_not_found=False)
+        is_eu = bool(
+            europe and country and country in europe.country_ids and country.code != "ES"
+        )
+        explicit_account = partner.with_company(company).a3_customer_account
+        customer_account = (
+            int(explicit_account) if explicit_account and explicit_account.isdigit() else None
+        )
+        currency = None if self.currency_id == company.currency_id else self.currency_id.name
+        subtype = self._a3_subtype()
+        operation_type = int(subtype) if subtype and subtype.isdigit() else 1
+        if not partner.vat:
+            warnings.append(self.env._("%s: el cliente no tiene NIF.", self.name))
+
+        def num(value):
+            value = round(value, 2)
+            return int(value) if value == int(value) else value
+
+        rows = []
+        for group in groups:
+            rate = group["vat"].amount if group["vat"] else 0.0
+            rec_rate = group["rec"].amount if group["rec"] else 0.0
+            concept = (
+                group["categ"].name if group["categ"] else group["label"]
+            ) or ""
+            rows.append([
+                self.invoice_date or self.date,                           # A fecha
+                self.name,                                                # B número
+                int(partner.ref) if (partner.ref or "").isdigit() else partner.id,  # C código cliente
+                partner.name,                                             # D nombre
+                fmt_vat(partner.vat) or "",                               # E NIF
+                (self.invoice_payment_term_id.name or "")[:10],           # F forma de pago
+                "N" if is_refund else "T",                                # G T normal / N abono
+                num(total),                                               # H total factura
+                num(base_total),                                          # I base total
+                num(tier_bases[4]),                                       # J base 4 %
+                num(tier_bases[10]),                                      # K base 10 %
+                num(tier_bases[21]),                                      # L base 21 %
+                currency,                                                 # M moneda
+                concept[:40],                                             # N concepto (familia)
+                int(group["account"]._a3_get_code(company)),              # O cuenta de ventas
+                num(rate),                                                # P % IVA
+                num(sign * group["base"]),                                # Q base línea
+                num(sign * group["base"]),                                # R base (A3)
+                num(sign * group["vat_amount"]),                          # S cuota IVA
+                num(rec_rate),                                            # T % recargo
+                num(sign * group["rec_amount"]),                          # U cuota recargo
+                customer_account,                                         # V cuenta cliente
+                operation_type,                                           # W tipo de operación
+                "True" if not vat_total else "False",                     # X exento
+                "True" if is_eu else "False",                             # Y intracomunitario
+                country_name,                                             # Z país
+                "True" if subtype == "04" else "False",                   # AA ISP
+            ])
+        return rows, warnings
