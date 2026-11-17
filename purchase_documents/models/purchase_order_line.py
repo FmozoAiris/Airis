@@ -31,7 +31,7 @@ class PurchaseOrderLine(models.Model):
             "res_id": self.id,
             "view_mode": "form",
             "views": [
-                (self.env.ref("solfix_compras_fabrica.purchase_order_line_inspection_form").id, "form")
+                (self.env.ref("purchase_documents.purchase_order_line_inspection_form").id, "form")
             ],
             "target": "new",
         }
