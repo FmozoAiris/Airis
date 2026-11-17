@@ -11,12 +11,55 @@
             <xpath expr="//group//field[@name='partner_ref']" position="after">
                 <field name="factory_status" widget="badge"
                        decoration-info="factory_status in ('requested', 'production')"
-                       decoration-warning="factory_status in ('transit', 'partial')"
+                       decoration-warning="factory_status in ('transit', 'partial_transit', 'partial')"
                        decoration-success="factory_status == 'received'"/>
                 <field name="proforma_date"/>
                 <field name="production_date"/>
                 <field name="departure_date" invisible="state in ('draft', 'sent', 'to approve', 'cancel')"/>
             </xpath>
+            <xpath expr="//field[@name='order_line']/list/field[@name='price_unit']" position="before">
+                <field name="inspection_doc_count" string="Insp." optional="show"
+                       invisible="display_type or not inspection_doc_count"/>
+                <button name="action_open_inspection_docs" type="object" icon="fa-paperclip"
+                        title="Documentos de inspección" invisible="display_type"/>
+            </xpath>
+            <xpath expr="//notebook/page[@name='purchase_delivery_invoice']" position="before">
+                <page string="Envíos" name="solfix_shipments" invisible="not shipment_picking_ids">
+                    <field name="shipment_picking_ids" readonly="1">
+                        <list decoration-warning="shipment_in_transit" decoration-muted="state == 'cancel'">
+                            <field name="name"/>
+                            <field name="shipment_mode"/>
+                            <field name="shipment_carrier_id"/>
+                            <field name="shipment_tracking_ref"/>
+                            <field name="shipment_departure_date"/>
+                            <field name="shipment_eta"/>
+                            <field name="date_done" string="Recibido el" widget="date"/>
+                            <field name="shipment_in_transit" column_invisible="1"/>
+                            <field name="state" widget="badge"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="purchase_order_line_inspection_form" model="ir.ui.view">
+        <field name="name">purchase.order.line.inspection.form</field>
+        <field name="model">purchase.order.line</field>
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <form string="Documentos de inspección">
+                <group>
+                    <field name="order_id" readonly="1"/>
+                    <field name="product_id" readonly="1"/>
+                    <field name="product_qty" readonly="1"/>
+                </group>
+                <field name="inspection_attachment_ids" widget="many2many_binary"/>
+                <footer>
+                    <button string="Guardar" special="save" class="btn-primary"/>
+                    <button string="Cerrar" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
         </field>
     </record>
 
@@ -28,7 +71,7 @@
             <xpath expr="//field[@name='partner_ref']" position="after">
                 <field name="factory_status" widget="badge" optional="show"
                        decoration-info="factory_status in ('requested', 'production')"
-                       decoration-warning="factory_status in ('transit', 'partial')"
+                       decoration-warning="factory_status in ('transit', 'partial_transit', 'partial')"
                        decoration-success="factory_status == 'received'"/>
                 <field name="departure_date" optional="show"/>
             </xpath>
@@ -43,7 +86,7 @@
             <xpath expr="//field[@name='partner_id']" position="after">
                 <field name="factory_status" widget="badge" class="ms-1"
                        decoration-info="factory_status in ('requested', 'production')"
-                       decoration-warning="factory_status in ('transit', 'partial')"
+                       decoration-warning="factory_status in ('transit', 'partial_transit', 'partial')"
                        decoration-success="factory_status == 'received'"/>
             </xpath>
         </field>
@@ -56,9 +99,9 @@
         <field name="arch" type="xml">
             <xpath expr="//filter[@name='draft_rfqs']" position="before">
                 <filter name="factory_open" string="Pendientes de recibir"
-                        domain="[('factory_status', 'in', ('requested', 'production', 'transit', 'partial'))]"/>
+                        domain="[('factory_status', 'in', ('requested', 'production', 'transit', 'partial_transit', 'partial'))]"/>
                 <filter name="factory_transit" string="En tránsito"
-                        domain="[('factory_status', '=', 'transit')]"/>
+                        domain="[('factory_status', 'in', ('transit', 'partial_transit'))]"/>
                 <separator/>
             </xpath>
             <xpath expr="//search" position="inside">
