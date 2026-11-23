@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="mail_activity_type_fix_errors" model="mail.activity.type">
+        <field name="name">Subsanar errores</field>
+        <field name="summary">Subsanar errores</field>
+        <field name="res_model">crm.lead</field>
+        <field name="icon">fa-wrench</field>
+        <field name="delay_count">1</field>
+    </record>
+    <record id="mail_activity_type_review" model="mail.activity.type">
+        <field name="name">Revisar documentación</field>
+        <field name="summary">Revisar documentación</field>
+        <field name="res_model">crm.lead</field>
+        <field name="icon">fa-search</field>
+        <field name="delay_count">1</field>
+    </record>
+
+    <record id="business_line_sale" model="crm.lead.business.line">
+        <field name="name">Venta</field>
+        <field name="sequence">10</field>
+    </record>
+    <record id="business_line_rental" model="crm.lead.business.line">
+        <field name="name">Arrendamiento</field>
+        <field name="sequence">20</field>
+    </record>
+    <record id="business_line_maintenance" model="crm.lead.business.line">
+        <field name="name">Mantenimiento</field>
+        <field name="sequence">30</field>
+    </record>
+
+    <record id="typology_cameras" model="crm.lead.typology">
+        <field name="name">Cámaras</field>
+        <field name="sequence">10</field>
+    </record>
+    <record id="typology_crosswalks" model="crm.lead.typology">
+        <field name="name">Pasos de peatones</field>
+        <field name="sequence">20</field>
+    </record>
+</odoo>

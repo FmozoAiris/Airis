@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="crm_lead_business_line_view_list" model="ir.ui.view">
+        <field name="name">crm.lead.business.line.list</field>
+        <field name="model">crm.lead.business.line</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+    <record id="crm_lead_business_line_action" model="ir.actions.act_window">
+        <field name="name">Líneas</field>
+        <field name="res_model">crm.lead.business.line</field>
+        <field name="view_mode">list</field>
+        <field name="context">{'active_test': False}</field>
+    </record>
+
+    <record id="crm_lead_typology_view_list" model="ir.ui.view">
+        <field name="name">crm.lead.typology.list</field>
+        <field name="model">crm.lead.typology</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="color" widget="color_picker"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+    <record id="crm_lead_typology_action" model="ir.actions.act_window">
+        <field name="name">Tipologías</field>
+        <field name="res_model">crm.lead.typology</field>
+        <field name="view_mode">list</field>
+        <field name="context">{'active_test': False}</field>
+    </record>
+
+    <menuitem id="menu_crm_lead_business_line" name="Líneas" parent="crm.menu_crm_config_lead"
+              action="crm_lead_business_line_action" sequence="40" groups="sales_team.group_sale_manager"/>
+    <menuitem id="menu_crm_lead_typology" name="Tipologías" parent="crm.menu_crm_config_lead"
+              action="crm_lead_typology_action" sequence="41" groups="sales_team.group_sale_manager"/>
+</odoo>

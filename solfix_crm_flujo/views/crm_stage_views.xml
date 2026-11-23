@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="crm_stage_form_solfix_flujo" model="ir.ui.view">
+        <field name="name">crm.stage.form.solfix.flujo</field>
+        <field name="model">crm.stage</field>
+        <field name="inherit_id" ref="crm.crm_stage_form"/>
+        <field name="arch" type="xml">
+            <field name="is_won" position="after">
+                <field name="is_review_stage"/>
+                <field name="responsible_group_id" options="{'no_create': True}"/>
+                <field name="require_activities_done"/>
+                <field name="require_attachment"/>
+                <field name="entry_activity_type_id" options="{'no_create': True}"/>
+                <field name="entry_activity_user_id" options="{'no_create': True}"
+                       invisible="not entry_activity_type_id"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="crm_stage_tree_solfix_flujo" model="ir.ui.view">
+        <field name="name">crm.stage.list.solfix.flujo</field>
+        <field name="model">crm.stage</field>
+        <field name="inherit_id" ref="crm.crm_stage_tree"/>
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field name="is_review_stage" optional="show"/>
+                <field name="responsible_group_id" optional="show"/>
+                <field name="require_activities_done" optional="hide"/>
+                <field name="require_attachment" optional="hide"/>
+            </field>
+        </field>
+    </record>
+</odoo>

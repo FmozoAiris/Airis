@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="crm_lead_view_form_solfix_flujo" model="ir.ui.view">
+        <field name="name">crm.lead.form.solfix.flujo</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.crm_lead_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header/button[@name='action_set_won_rainbowman']" position="attributes">
+                <attribute name="groups">sales_team.group_sale_manager</attribute>
+            </xpath>
+            <xpath expr="//header/button[@data-hotkey='l']" position="attributes">
+                <attribute name="groups">sales_team.group_sale_manager</attribute>
+            </xpath>
+
+            <xpath expr="//header/field[@name='stage_id']" position="attributes">
+                <attribute name="readonly">1</attribute>
+            </xpath>
+            <xpath expr="//header/field[@name='stage_id']" position="before">
+                <field name="is_review_stage" invisible="1"/>
+                <field name="can_act_on_stage" invisible="1"/>
+                <field name="next_stage_is_won" invisible="1"/>
+                <button name="action_flow_submit" type="object" string="Enviar a revisión"
+                        class="btn-primary"
+                        invisible="type == 'lead' or won_status != 'pending' or is_review_stage or not can_act_on_stage or next_stage_is_won"/>
+                <button name="action_flow_submit" type="object" string="Enviar a ganado"
+                        class="btn-primary"
+                        invisible="type == 'lead' or won_status != 'pending' or is_review_stage or not can_act_on_stage or not next_stage_is_won"/>
+                <button name="action_flow_approve" type="object" string="Aprobar"
+                        class="btn-success"
+                        invisible="type == 'lead' or won_status != 'pending' or not is_review_stage or not can_act_on_stage or rejection_cause"/>
+                <button name="action_flow_reject" type="object" string="Rechazar"
+                        class="btn-danger"
+                        invisible="type == 'lead' or won_status != 'pending' or not is_review_stage or not can_act_on_stage"/>
+            </xpath>
+
+            <xpath expr="//div[@id='probability']/.." position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//h2//span[hasclass('mx-3')][1]" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//group[hasclass('d-sm-none')]//label[@for='probability']/.." position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+
+            <xpath expr="//field[@name='tag_ids']" position="before">
+                <field name="business_line_id" options="{'no_create': True}"/>
+                <field name="typology_ids" widget="many2many_tags"
+                       options="{'color_field': 'color', 'no_create': True}"/>
+            </xpath>
+
+            <xpath expr="//field[@name='tag_ids']" position="after">
+                <field name="rejection_cause"
+                       invisible="type == 'lead' or not is_review_stage or not can_act_on_stage"
+                       placeholder="Escriba la causa por la que no se aprueba la documentación"/>
+                <field name="last_rejection" invisible="not last_rejection"/>
+                <field name="doc_approved_1" invisible="type == 'lead'"/>
+                <field name="doc_approved_2" invisible="type == 'lead'"/>
+            </xpath>
+
+            <xpath expr="//notebook" position="inside">
+                <page string="Registro del flujo" name="solfix_flow_log" invisible="type == 'lead'">
+                    <field name="flow_log_ids" nolabel="1">
+                        <list create="false" delete="false" edit="false"
+                              decoration-danger="action == 'reject'"
+                              decoration-success="action == 'approve'">
+                            <field name="date"/>
+                            <field name="action"/>
+                            <field name="stage_from_id"/>
+                            <field name="stage_to_id"/>
+                            <field name="cause"/>
+                            <field name="user_id" widget="many2one_avatar_user"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="crm_case_kanban_view_leads_solfix_flujo" model="ir.ui.view">
+        <field name="name">crm.lead.kanban.solfix.flujo</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.crm_case_kanban_view_leads"/>
+        <field name="arch" type="xml">
+            <xpath expr="//kanban" position="attributes">
+                <attribute name="records_draggable">0</attribute>
+            </xpath>
+        </field>
+    </record>
+</odoo>
